@@ -1,172 +1,45 @@
-  0%|                                                                                                             | 0/563 [00:20<?, ?it/s]
-╭─────────────────────────────── Traceback (most recent call last) ────────────────────────────────╮
-│ /home/--------------------------/prismer/eval_caption_v0.py:126 in <module>                      │
+╭─────────────────────────────── Traceback (most recent call last) ───────────────────────────────╮                                      
+│ /home/--------------------------/prismer/eval_caption_v0.py:135 in <module>                      │
 │                                                                                                  │
-│   123                                                                                            │
-│   124 with torch.no_grad():                                                                      │
-│   125 │   for step, (experts, data_ids) in enumerate(tqdm(test_loader)):                         │
-│ ❱ 126 │   │   captions = model(experts, train=False, prefix=config['prefix'])                    │
-│   127 │   │                                                                                      │
-│   128 │   │   if accelerator.use_distributed:                                                    │
-│   129 │   │   │   captions = tokenizer(captions, max_length=30, padding='max_length', return_t   │
+│   132 │   │                                                                                      │
+│   133 │   │   if accelerator.is_main_process:                                                    │
+│   134 │   │   │   for data_id, caption in zip(data_ids, captions):                               │
+│ ❱ 135 │   │   │   │   caption = tokenizer.decode(caption, skip_special_tokens=True)              │
+│   136 │   │   │   │   if args.target_dataset == 'coco':                                          │
+│   137 │   │   │   │   │   image_id = int(test_loader.dataset.data_list[data_id]['image'].split   │
+│   138 │   │   │   │   │   result.append({"image_id": image_id, "caption": caption.capitalize()   │
 │                                                                                                  │
-│ /home/-----------------------/lib/python3.8/site-packages/torch/nn/modules/module.py:1194 in     │
-│ _call_impl                                                                                       │
+│ /home/-----------------------/lib/python3.8/site-packages/transformers/tokenization_utils_base.p │
+│ y:3476 in decode                                                                                 │
 │                                                                                                  │
-│   1191 │   │   # this function, and just call forward.                                           │
-│   1192 │   │   if not (self._backward_hooks or self._forward_hooks or self._forward_pre_hooks o  │
-│   1193 │   │   │   │   or _global_forward_hooks or _global_forward_pre_hooks):                   │
-│ ❱ 1194 │   │   │   return forward_call(*input, **kwargs)                                         │
-│   1195 │   │   # Do not call functions when jit is used                                          │
-│   1196 │   │   full_backward_hooks, non_full_backward_hooks = [], []                             │
-│   1197 │   │   if self._backward_hooks or _global_backward_hooks:                                │
+│   3473 │   │   # Convert inputs to python lists                                                  │
+│   3474 │   │   token_ids = to_py_obj(token_ids)                                                  │
+│   3475 │   │                                                                                     │
+│ ❱ 3476 │   │   return self._decode(                                                              │
+│   3477 │   │   │   token_ids=token_ids,                                                          │
+│   3478 │   │   │   skip_special_tokens=skip_special_tokens,                                      │
+│   3479 │   │   │   clean_up_tokenization_spaces=clean_up_tokenization_spaces,                    │
 │                                                                                                  │
-│ /home/--------------------------/prismer/model/prismer_caption.py:45 in forward                  │
+│ /home/-----------------------/lib/python3.8/site-packages/transformers/tokenization_utils.py:931 │
+│ in _decode                                                                                       │
 │                                                                                                  │
-│    42 │   │   │   │   num_beams = 3                                                              │
-│    43 │   │   │   │   experts_train = self.expert_encoder(experts)                               │
-│    44 │   │   │   │   experts_train = rearrange(experts_train, 'l b d -> b l d')  # batch_size   │
-│ ❱  45 │   │   │   │   outputs = self.text_decoder.generate(input_ids=input_ids,                  │
-│    46 │   │   │   │   │   │   │   │   │   │   │   │   │    encoder_hidden_states=experts_train   │
-│    47 │   │   │   │   │   │   │   │   │   │   │   │   │    attention_mask=attention_masks,       │
-│    48 │   │   │   │   │   │   │   │   │   │   │   │   │    num_beams=num_beams,                  │
+│   928 │   ) -> str:                                                                              │
+│   929 │   │   self._decode_use_source_tokenizer = kwargs.pop("use_source_tokenizer", False)      │
+│   930 │   │                                                                                      │
+│ ❱ 931 │   │   filtered_tokens = self.convert_ids_to_tokens(token_ids, skip_special_tokens=skip   │
+│   932 │   │                                                                                      │
+│   933 │   │   # To avoid mixing byte-level and unicode for byte-level BPT                        │
+│   934 │   │   # we need to build string separately for added tokens and byte-level tokens        │
 │                                                                                                  │
-│ /home/-----------------------/lib/python3.8/site-packages/torch/autograd/grad_mode.py:27 in      │
-│ decorate_context                                                                                 │
+│ /home/-----------------------/lib/python3.8/site-packages/transformers/tokenization_utils.py:906 │
+│ in convert_ids_to_tokens                                                                         │
 │                                                                                                  │
-│    24 │   │   @functools.wraps(func)                                                             │
-│    25 │   │   def decorate_context(*args, **kwargs):                                             │
-│    26 │   │   │   with self.clone():                                                             │
-│ ❱  27 │   │   │   │   return func(*args, **kwargs)                                               │
-│    28 │   │   return cast(F, decorate_context)                                                   │
-│    29 │                                                                                          │
-│    30 │   def _wrap_generator(self, func):                                                       │
-│                                                                                                  │
-│ /home/-----------------------/lib/python3.8/site-packages/transformers/generation/utils.py:1474  │
-│ in generate                                                                                      │
-│                                                                                                  │
-│   1471 │   │   │   │   **model_kwargs,                                                           │
-│   1472 │   │   │   )                                                                             │
-│   1473 │   │   │   # 13. run beam search                                                         │
-│ ❱ 1474 │   │   │   return self.beam_search(                                                      │
-│   1475 │   │   │   │   input_ids,                                                                │
-│   1476 │   │   │   │   beam_scorer,                                                              │
-│   1477 │   │   │   │   logits_processor=logits_processor,                                        │
-│                                                                                                  │
-│ /home/-----------------------/lib/python3.8/site-packages/transformers/generation/utils.py:2722  │
-│ in beam_search                                                                                   │
-│                                                                                                  │
-│   2719 │   │   │                                                                                 │
-│   2720 │   │   │   model_inputs = self.prepare_inputs_for_generation(input_ids, **model_kwargs)  │
-│   2721 │   │   │                                                                                 │
-│ ❱ 2722 │   │   │   outputs = self(                                                               │
-│   2723 │   │   │   │   **model_inputs,                                                           │
-│   2724 │   │   │   │   return_dict=True,                                                         │
-│   2725 │   │   │   │   output_attentions=output_attentions,                                      │
-│                                                                                                  │
-│ /home/-----------------------/lib/python3.8/site-packages/torch/nn/modules/module.py:1194 in     │
-│ _call_impl                                                                                       │
-│                                                                                                  │
-│   1191 │   │   # this function, and just call forward.                                           │
-│   1192 │   │   if not (self._backward_hooks or self._forward_hooks or self._forward_pre_hooks o  │
-│   1193 │   │   │   │   or _global_forward_hooks or _global_forward_pre_hooks):                   │
-│ ❱ 1194 │   │   │   return forward_call(*input, **kwargs)                                         │
-│   1195 │   │   # Do not call functions when jit is used                                          │
-│   1196 │   │   full_backward_hooks, non_full_backward_hooks = [], []                             │
-│   1197 │   │   if self._backward_hooks or _global_backward_hooks:                                │
-│                                                                                                  │
-│ /home/--------------------------/prismer/model/modules/roberta.py:369 in forward                 │
-│                                                                                                  │
-│   366 │   │   │   return_dict: Optional[bool] = None,                                            │
-│   367 │   ) -> Union[Tuple[torch.Tensor], CausalLMOutputWithCrossAttentions]:                    │
-│   368 │   │                                                                                      │
-│ ❱ 369 │   │   outputs = self.roberta(                                                            │
-│   370 │   │   │   input_ids,                                                                     │
-│   371 │   │   │   attention_mask=attention_mask,                                                 │
-│   372 │   │   │   encoder_hidden_states=encoder_hidden_states,                                   │
-│                                                                                                  │
-│ /home/-----------------------/lib/python3.8/site-packages/torch/nn/modules/module.py:1194 in     │
-│ _call_impl                                                                                       │
-│                                                                                                  │
-│   1191 │   │   # this function, and just call forward.                                           │
-│   1192 │   │   if not (self._backward_hooks or self._forward_hooks or self._forward_pre_hooks o  │
-│   1193 │   │   │   │   or _global_forward_hooks or _global_forward_pre_hooks):                   │
-│ ❱ 1194 │   │   │   return forward_call(*input, **kwargs)                                         │
-│   1195 │   │   # Do not call functions when jit is used                                          │
-│   1196 │   │   full_backward_hooks, non_full_backward_hooks = [], []                             │
-│   1197 │   │   if self._backward_hooks or _global_backward_hooks:                                │
-│                                                                                                  │
-│ /home/--------------------------/prismer/model/modules/roberta.py:314 in forward                 │
-│                                                                                                  │
-│   311 │   │                                                                                      │
-│   312 │   │   embedding_output = self.embeddings(input_ids=input_ids)                            │
-│   313 │   │                                                                                      │
-│ ❱ 314 │   │   encoder_outputs = self.encoder(                                                    │
-│   315 │   │   │   embedding_output,                                                              │
-│   316 │   │   │   attention_mask=extended_attention_mask,                                        │
-│   317 │   │   │   encoder_hidden_states=encoder_hidden_states,                                   │
-│                                                                                                  │
-│ /home/-----------------------/lib/python3.8/site-packages/torch/nn/modules/module.py:1194 in     │
-│ _call_impl                                                                                       │
-│                                                                                                  │
-│   1191 │   │   # this function, and just call forward.                                           │
-│   1192 │   │   if not (self._backward_hooks or self._forward_hooks or self._forward_pre_hooks o  │
-│   1193 │   │   │   │   or _global_forward_hooks or _global_forward_pre_hooks):                   │
-│ ❱ 1194 │   │   │   return forward_call(*input, **kwargs)                                         │
-│   1195 │   │   # Do not call functions when jit is used                                          │
-│   1196 │   │   full_backward_hooks, non_full_backward_hooks = [], []                             │
-│   1197 │   │   if self._backward_hooks or _global_backward_hooks:                                │
-│                                                                                                  │
-│ /home/--------------------------/prismer/model/modules/roberta.py:225 in forward                 │
-│                                                                                                  │
-│   222 │   │   # text-decoder layers                                                              │
-│   223 │   │   for i, (layer_module, cross_attention, adaptor) in enumerate(self.layer):          │
-│   224 │   │   │   hidden_states = layer_module(hidden_states, attention_mask, mode='attention'   │
-│ ❱ 225 │   │   │   hidden_states = cross_attention(hidden_states, None, encoder_hidden_states)    │
-│   226 │   │   │   hidden_states = adaptor(hidden_states)                                         │
-│   227 │   │   │   hidden_states = layer_module(hidden_states, attention_mask, mode='mlp')        │
-│   228                                                                                            │
-│                                                                                                  │
-│ /home/-----------------------/lib/python3.8/site-packages/torch/nn/modules/module.py:1194 in     │
-│ _call_impl                                                                                       │
-│                                                                                                  │
-│   1191 │   │   # this function, and just call forward.                                           │
-│   1192 │   │   if not (self._backward_hooks or self._forward_hooks or self._forward_pre_hooks o  │
-│   1193 │   │   │   │   or _global_forward_hooks or _global_forward_pre_hooks):                   │
-│ ❱ 1194 │   │   │   return forward_call(*input, **kwargs)                                         │
-│   1195 │   │   # Do not call functions when jit is used                                          │
-│   1196 │   │   full_backward_hooks, non_full_backward_hooks = [], []                             │
-│   1197 │   │   if self._backward_hooks or _global_backward_hooks:                                │
-│                                                                                                  │
-│ /home/--------------------------/prismer/model/modules/roberta.py:155 in forward                 │
-│                                                                                                  │
-│   152 │   │   │   attention_mask: Optional[torch.FloatTensor] = None,                            │
-│   153 │   │   │   encoder_hidden_states: Optional[torch.FloatTensor] = None,                     │
-│   154 │   ) -> torch.Tensor:                                                                     │
-│ ❱ 155 │   │   self_outputs = self.self(hidden_states, attention_mask, encoder_hidden_states)     │
-│   156 │   │   attention_output = self.output(self_outputs, hidden_states)                        │
-│   157 │   │   return attention_output                                                            │
-│   158                                                                                            │
-│                                                                                                  │
-│ /home/-----------------------/lib/python3.8/site-packages/torch/nn/modules/module.py:1194 in     │
-│ _call_impl                                                                                       │
-│                                                                                                  │
-│   1191 │   │   # this function, and just call forward.                                           │
-│   1192 │   │   if not (self._backward_hooks or self._forward_hooks or self._forward_pre_hooks o  │
-│   1193 │   │   │   │   or _global_forward_hooks or _global_forward_pre_hooks):                   │
-│ ❱ 1194 │   │   │   return forward_call(*input, **kwargs)                                         │
-│   1195 │   │   # Do not call functions when jit is used                                          │
-│   1196 │   │   full_backward_hooks, non_full_backward_hooks = [], []                             │
-│   1197 │   │   if self._backward_hooks or _global_backward_hooks:                                │
-│                                                                                                  │
-│ /home/--------------------------/prismer/model/modules/roberta.py:110 in forward                 │
-│                                                                                                  │
-│   107 │   │                                                                                      │
-│   108 │   │   q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h=self.num_attentio   │
-│   109 │   │                                                                                      │
-│ ❱ 110 │   │   attention_scores = torch.matmul(q, k.transpose(-1, -2))                            │
-│   111 │   │   attention_scores = attention_scores / math.sqrt(self.attention_head_size)          │
-│   112 │   │                                                                                      │
-│   113 │   │   if attention_mask is not None:                                                     │
+│   903 │   │   │   │   return self._convert_id_to_token(ids)                                      │
+│   904 │   │   tokens = []                                                                        │
+│   905 │   │   for index in ids:                                                                  │
+│ ❱ 906 │   │   │   index = int(index)                                                             │
+│   907 │   │   │   if skip_special_tokens and index in self.all_special_ids:                      │
+│   908 │   │   │   │   continue                                                                   │
+│   909 │   │   │   if index in self.added_tokens_decoder:                                         │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
-RuntimeError: The size of tensor a (24) must match the size of tensor b (8) at non-singleton dimension 0
+ValueError: invalid literal for int() with base 10: 'a'
