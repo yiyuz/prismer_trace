@@ -1,0 +1,194 @@
+[13:00:56] WARNING  The following values were not passed to `accelerate launch` and had defaults used instead:               lau[424/1888]                            `--dynamo_backend` was set to a value of `'no'`                                                                                   To avoid this warning pass in values for each of the problematic parameters or run `accelerate config`.                 0%|                                                                                                             | 0/563 [26:00<?, ?it/s]╭─────────────────────────────── Traceback (most recent call last) ────────────────────────────────╮
+│ /home/--------------------------/prismer/eval_caption_v0.py:132 in <module>                      │
+│                                                                                                  │
+│   129 │   │   if accelerator.use_distributed:                                                    │
+│   130 │   │   │   captions = tokenizer(captions, max_length=30, padding='max_length', return_t   │
+│   131 │   │   │   captions = captions.to(experts['rgb'].device)                                  │
+│ ❱ 132 │   │   │   data_ids, captions = accelerator.gather_for_metrics((data_ids, captions))      │
+│   133 │   │                                                                                      │
+│   134 │   │   if accelerator.is_main_process:                                                    │
+│   135 │   │   │   for data_id, caption in zip(data_ids, captions):                               │
+│                                                                                                  │
+│ /home/-----------------------/lib/python3.8/site-packages/accelerate/accelerator.py:1795 in      │
+│ gather_for_metrics                                                                               │
+│                                                                                                  │
+│   1792 │   │   9                                                                                 │
+│   1793 │   │   ```                                                                               │
+│   1794 │   │   """                                                                               │
+│ ❱ 1795 │   │   tensor = self.gather(tensor)                                                      │
+│   1796 │   │   if self.use_distributed:                                                          │
+│   1797 │   │   │   if self.gradient_state.remainder == -1:                                       │
+│   1798 │   │   │   │   logger.info(                                                              │
+│                                                                                                  │
+│ /home/-----------------------/lib/python3.8/site-packages/accelerate/accelerator.py:1768 in      │
+│ gather                                                                                           │
+│                                                                                                  │
+│   1765 │   │   tensor([0, 1, 2, 3])                                                              │
+│   1766 │   │   ```                                                                               │
+│   1767 │   │   """                                                                               │
+│ ❱ 1768 │   │   return gather(tensor)                                                             │
+│   1769 │                                                                                         │
+│   1770 │   def gather_for_metrics(self, tensor):                                                 │
+│   1771 │   │   """                                                                               │
+│                                                                                                  │                                      │ /home/-----------------------/lib/python3.8/site-packages/accelerate/utils/operations.py:228 in  │
+│ gather                                                                                           │
+│                                                                                                  │
+│   225 │   if PartialState().distributed_type == DistributedType.TPU:                             │
+│   226 │   │   return _tpu_gather(tensor, name="accelerate.utils.gather")                         │
+│   227 │   elif PartialState().distributed_type in CUDA_DISTRIBUTED_TYPES:                        │
+│ ❱ 228 │   │   return _gpu_gather(tensor)                                                         │
+│   229 │   elif PartialState().distributed_type == DistributedType.MULTI_CPU:                     │
+│   230 │   │   return _cpu_gather(tensor)                                                         │
+│   231 │   else:                                                                                  │
+│                                                                                                  │
+│ /home/-----------------------/lib/python3.8/site-packages/accelerate/utils/operations.py:208 in  │                            [376/1888]
+│ _gpu_gather                                                                                      │
+│                                                                                                  │
+│   205 │   │   torch.distributed.all_gather(output_tensors, tensor)                               │
+│   206 │   │   return torch.cat(output_tensors, dim=0)                                            │
+│   207 │                                                                                          │
+│ ❱ 208 │   return recursively_apply(_gpu_gather_one, tensor, error_on_other_type=True)            │
+│   209                                                                                            │
+│   210                                                                                            │
+│   211 _cpu_gather = _gpu_gather                                                                  │
+│                                                                                                  │
+│ /home/-----------------------/lib/python3.8/site-packages/accelerate/utils/operations.py:82 in   │
+│ recursively_apply                                                                                │
+│                                                                                                  │
+│    79 │   │   The same data structure as `data` with `func` applied to every object of type `m   │
+│    80 │   """                                                                                    │
+│    81 │   if isinstance(data, (tuple, list)):                                                    │
+│ ❱  82 │   │   return honor_type(                                                                 │
+│    83 │   │   │   data,                                                                          │
+│    84 │   │   │   (                                                                              │
+│    85 │   │   │   │   recursively_apply(                                                         │
+│                                                                                                  │
+│ /home/-----------------------/lib/python3.8/site-packages/accelerate/utils/operations.py:53 in   │
+│ honor_type                                                                                       │
+│                                                                                                  │
+│    50 │   Cast a generator to the same type as obj (list, tuple, or namedtuple)                  │
+│    51 │   """                                                                                    │
+│    52 │   try:                                                                                   │
+│ ❱  53 │   │   return type(obj)(generator)                                                        │
+│    54 │   except TypeError:                                                                      │
+│    55 │   │   # Some objects may not be able to instantiate from a generator directly            │
+│    56 │   │   return type(obj)(*list(generator))                                                 │
+│                                                                                                  │
+│ /home/-----------------------/lib/python3.8/site-packages/accelerate/utils/operations.py:85 in   │
+│ <genexpr>                                                                                        │
+│                                                                                                  │
+│    82 │   │   return honor_type(                                                                 │
+│    83 │   │   │   data,                                                                          │
+│    84 │   │   │   (                                                                              │
+│ ❱  85 │   │   │   │   recursively_apply(                                                         │
+│    86 │   │   │   │   │   func, o, *args, test_type=test_type, error_on_other_type=error_on_ot   │
+│    87 │   │   │   │   )                                                                          │
+│    88 │   │   │   │   for o in data                                                              │
+│                                                                                                  │
+│ /home/-----------------------/lib/python3.8/site-packages/accelerate/utils/operations.py:101 in  │
+│ recursively_apply                                                                                │
+│                                                                                                  │
+│    98 │   │   │   }                                                                              │
+│    99 │   │   )                                                                                  │
+│   100 │   elif test_type(data):                                                                  │
+│ ❱ 101 │   │   return func(data, *args, **kwargs)                                                 │
+│   102 │   elif error_on_other_type:                                                              │
+│   103 │   │   raise TypeError(                                                                   │
+│   104 │   │   │   f"Can't apply {func.__name__} on object of type {type(data)}, only of nested   │
+│                                                                                                  │
+│ /home/-----------------------/lib/python3.8/site-packages/accelerate/utils/operations.py:205 in  │
+│ _gpu_gather_one                                                                                  │
+│                                                                                                  │
+│   202 │   │   if tensor.ndim == 0:                                                               │
+│   203 │   │   │   tensor = tensor.clone()[None]                                                  │
+│   204 │   │   output_tensors = [tensor.clone() for _ in range(torch.distributed.get_world_size   │
+│ ❱ 205 │   │   torch.distributed.all_gather(output_tensors, tensor)                               │
+│   206 │   │   return torch.cat(output_tensors, dim=0)                                            │
+│   207 │                                                                                          │
+│   208 │   return recursively_apply(_gpu_gather_one, tensor, error_on_other_type=True)            │
+│                                                                                                  │
+│ /home/-----------------------/lib/python3.8/site-packages/torch/distributed/distributed_c10d.py: │
+│ 2275 in all_gather                                                                               │
+│                                                                                                  │
+│   2272 │                                                                                         │
+│   2273 │   if group is None:                                                                     │
+│   2274 │   │   default_pg = _get_default_group()                                                 │
+│ ❱ 2275 │   │   work = default_pg.allgather([tensor_list], [tensor])                              │
+│   2276 │   else:                                                                                 │
+│   2277 │   │   work = group.allgather([tensor_list], [tensor])                                   │
+│   2278                                                                                           │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+RuntimeError: Tensors must be CUDA and dense  
+[13:27:13] WARNING  Sending process 2836188 closing signal SIGTERM                                                              a[52/1888]           WARNING  Sending process 2836189 closing signal SIGTERM                                                              api.py:699           ERROR    failed (exitcode: 1) local_rank: 2 (pid: 2836190) of binary: /home/-----------------------/bin/python3.8    api.py:673╭─────────────────────────────── Traceback (most recent call last) ────────────────────────────────╮
+│ /home/-----------------------/bin/accelerate:8 in <module>                                       │
+│                                                                                                  │
+│   5 from accelerate.commands.accelerate_cli import main                                          │
+│   6 if __name__ == '__main__':                                                                   │
+│   7 │   sys.argv[0] = re.sub(r'(-script\.pyw|\.exe)?$', '', sys.argv[0])                         │
+│ ❱ 8 │   sys.exit(main())                                                                         │
+│   9                                                                                              │
+│                                                                                                  │
+│ /home/-----------------------/lib/python3.8/site-packages/accelerate/commands/accelerate_cli.py: │
+│ 45 in main                                                                                       │
+│                                                                                                  │
+│   42 │   │   exit(1)                                                                             │
+│   43 │                                                                                           │
+│   44 │   # Run                                                                                   │
+│ ❱ 45 │   args.func(args)                                                                         │
+│   46                                                                                             │
+│   47                                                                                             │
+│   48 if __name__ == "__main__":                                                                  │
+│                                                                                                  │
+│ /home/-----------------------/lib/python3.8/site-packages/accelerate/commands/launch.py:906 in   │
+│ launch_command                                                                                   │
+│                                                                                                  │
+│   903 │   elif args.use_megatron_lm and not args.cpu:                                            │
+│   904 │   │   multi_gpu_launcher(args)                                                           │
+│   905 │   elif args.multi_gpu and not args.cpu:                                                  │                                      │ ❱ 906 │   │   multi_gpu_launcher(args)                                                           │
+│   907 │   elif args.tpu and not args.cpu:                                                        │
+│   908 │   │   if args.tpu_cluster:                                                               │
+│   909 │   │   │   tpu_pod_launcher(args)                                                         │
+│                                                                                                  │
+│ /home/-----------------------/lib/python3.8/site-packages/accelerate/commands/launch.py:599 in   │
+│ multi_gpu_launcher                                                                               │
+│                                                                                                  │
+│   596 │   )                                                                                      │
+│   597 │   with patch_environment(**current_env):                                                 │
+│   598 │   │   try:                                                                               │
+│ ❱ 599 │   │   │   distrib_run.run(args)                                                          │
+│   600 │   │   except Exception:                                                                  │
+│   601 │   │   │   if is_rich_available() and debug:                                              │
+│   602 │   │   │   │   console = get_console()                                                    │
+│                                                                                                  │
+│ /home/-----------------------/lib/python3.8/site-packages/torch/distributed/run.py:753 in run    │
+│                                                                                                  │
+│   750 │   │   )                                                                                  │
+│   751 │                                                                                          │                              [4/1888]
+│   752 │   config, cmd, cmd_args = config_from_args(args)                                         │
+│ ❱ 753 │   elastic_launch(                                                                        │
+│   754 │   │   config=config,                                                                     │
+│   755 │   │   entrypoint=cmd,                                                                    │
+│   756 │   )(*cmd_args)                                                                           │
+│                                                                                                  │
+│ /home/-----------------------/lib/python3.8/site-packages/torch/distributed/launcher/api.py:132  │
+│ in __call__                                                                                      │
+│                                                                                                  │
+│   129 │   │   self._entrypoint = entrypoint                                                      │
+│   130 │                                                                                          │
+│   131 │   def __call__(self, *args):                                                             │
+│ ❱ 132 │   │   return launch_agent(self._config, self._entrypoint, list(args))                    │
+│   133                                                                                            │
+│   134                                                                                            │
+│   135 def _get_entrypoint_name(                                                                  │
+│                                                                                                  │
+│ /home/-----------------------/lib/python3.8/site-packages/torch/distributed/launcher/api.py:246  │
+│ in launch_agent                                                                                  │
+│                                                                                                  │
+│   243 │   │   │   # if the error files for the failed children exist                             │
+│   244 │   │   │   # @record will copy the first error (root cause)                               │
+│   245 │   │   │   # to the error file of the launcher process.                                   │
+│ ❱ 246 │   │   │   raise ChildFailedError(                                                        │
+│   247 │   │   │   │   name=entrypoint_name,                                                      │
+│   248 │   │   │   │   failures=result.failures,                                                  │
+│   249 │   │   │   )                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
